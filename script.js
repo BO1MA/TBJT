@@ -530,8 +530,14 @@ let gameSettings = {
   displayMode: "fullscreen"
 };
 
-const isDesktopApp = Boolean(window.desktopAPI && window.desktopAPI.isDesktop);
-const CURRENT_VERSION = "1.0.4";
+function applyVideoAudioSettings() {
+  player.volume = gameSettings.volume / 100;
+  player.muted = gameSettings.muted;
+}
+
+const isDesktopApp = Platform.isElectron();
+const isCapacitorApp = Platform.isCapacitor();
+const CURRENT_VERSION = "1.0.5";
 const GITHUB_REPO = "BO1MA/TBJT";
 const statusIndicator = document.getElementById("version-status-indicator");
 const currentVersionDisplay = document.getElementById("current-version-display");
@@ -692,6 +698,10 @@ function setupPlatformSettings() {
     desktopControls.style.display = "flex";
     webControls.style.display = "none";
     applyDesktopDisplayMode(gameSettings.displayMode);
+  } else if (isCapacitorApp) {
+    platformTag.textContent = "MOBILE CLIENT // CAPACITOR";
+    desktopControls.style.display = "none";
+    webControls.style.display = "block";
   } else {
     platformTag.textContent = "WEB BROWSER // CLIENT";
     desktopControls.style.display = "none";
@@ -1141,7 +1151,7 @@ function showMainMenu() {
 
   player.src = "videos/boot_03_menu_background.mp4";
   player.loop = true;
-  player.muted = true;
+  applyVideoAudioSettings();
   player.play().catch(() => {
     window.addEventListener("click", () => player.play(), { once: true });
   });
@@ -1181,6 +1191,7 @@ function togglePauseGame() {
       timerBar.style.animationPlayState = "running";
     }
     if (!dbhOverlay.classList.contains("active")) {
+      applyVideoAudioSettings();
       player.play().catch((e) => console.warn(e));
     }
   }
@@ -1371,6 +1382,7 @@ function playBootSequence() {
     player.loop = false;
     player.src = bootSequence[bootIndex];
     bootIndex++;
+    applyVideoAudioSettings();
     player.play().catch(() => {
       player.muted = true;
       player.play().catch((e) => console.error(e));
@@ -1423,6 +1435,7 @@ function loadAndPlaySequenceClip(sequenceName, onComplete) {
 
   const source = activeSequence[activeSequenceIndex];
   player.src = source;
+  applyVideoAudioSettings();
   player.currentTime = 0;
   player.play().catch((error) => {
     console.warn(`Autoplay audio issue, playing muted:`, error);
@@ -1524,7 +1537,7 @@ function displayDBHChoice(nodeKey, previousSequenceName = null) {
       dbhOverlay.classList.remove("active");
       state[choice.type] += 1;
       choiceHistory.push(choice.type);
-      player.muted = false;
+      applyVideoAudioSettings();
 
       let nextSeqKey;
       if (nodeKey === "cake_event") {
@@ -1641,7 +1654,7 @@ btnNewGame.addEventListener("click", () => {
   isIntroActive = true;
   isEndingAnalysisActive = false;
   mainMenu.classList.remove("active");
-  player.muted = false;
+  applyVideoAudioSettings();
   showPauseButton();
 
   playSequence("intro", () => {
@@ -1664,7 +1677,7 @@ btnContinue.addEventListener("click", () => {
   isIntroActive = !saved.isAtDecision && saved.sequenceName === "intro";
   isEndingAnalysisActive = false;
   mainMenu.classList.remove("active");
-  player.muted = false;
+  applyVideoAudioSettings();
   showPauseButton();
 
   if (saved.isAtDecision && saved.decisionKey) {
@@ -1680,6 +1693,7 @@ btnContinue.addEventListener("click", () => {
       activeSequenceIndex = savedFrameIndex;
       player.loop = false;
       player.src = savedFrameSource;
+      applyVideoAudioSettings();
       player.currentTime = 0;
       player.play().catch(() => {
         player.muted = true;
